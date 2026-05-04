@@ -2,9 +2,13 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/preraksudan/distributed-job-scheduler/internal/db"
+	"github.com/preraksudan/distributed-job-scheduler/internal/jobs"
 )
 
 func main() {
+
+	db.ConnectPostgres()
 
 	router := gin.Default()
 
@@ -13,6 +17,8 @@ func main() {
 			"message": "API running",
 		})
 	})
+
+	router.POST("/jobs", jobs.CreateJob)
 
 	router.Run(":8080")
 }
