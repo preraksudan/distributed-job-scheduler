@@ -1,0 +1,19 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: scheduler-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: scheduler
+      POSTGRES_PASSWORD: scheduler
+      POSTGRES_DB: scheduler_db
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    container_name: scheduler-redis
+    restart: always
+    ports:
+      - "6379:6379"
