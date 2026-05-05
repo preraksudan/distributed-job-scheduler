@@ -41,7 +41,8 @@ func checkAndQueueJobs() {
 		retries,
 		timeout_seconds,
 		enabled,
-		created_at
+		created_at,
+		last_execution_time
 	FROM jobs
 	WHERE enabled = true
 	`
@@ -70,6 +71,7 @@ func checkAndQueueJobs() {
 			&job.TimeoutSeconds,
 			&job.Enabled,
 			&job.CreatedAt,
+			&job.LastExecutionTime,
 		)
 
 		if err != nil {
@@ -96,6 +98,16 @@ func checkAndQueueJobs() {
 
 		nextRun := schedule.Next(now.Add(-1 * time.Minute))
 
+		if job.LastExecutionTime != nil {
+
+			lastRun := *job.LastExecutionTime
+
+			if now.Sub(lastRun) < time.Minute {
+
+				continue
+			}
+		}
+
 		if nextRun.Before(now) || nextRun.Equal(now) {
 
 			jobJSON, _ := json.Marshal(job)
@@ -109,6 +121,22 @@ func checkAndQueueJobs() {
 			if err != nil {
 				log.Println("Failed to enqueue job:", err)
 				continue
+			}
+
+			updateQuery := `
+				UPDATE jobs
+				SET last_execution_time = NOW()
+				WHERE id = $1
+				`
+
+			_, err = db.Conn.Exec(
+				context.Background(),
+				updateQuery,
+				job.ID,
+			)
+
+			if err != nil {
+				log.Println("Failed to update execution time:", err)
 			}
 
 			log.Printf(
